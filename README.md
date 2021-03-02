@@ -3,6 +3,7 @@
 ## TODO:
 - ~scaffold project~
 - ~implement core logic~
+- db and ecto stuff
 - write unit tests
 - implement API
 - write api tests

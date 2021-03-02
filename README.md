@@ -1,7 +1,7 @@
 # ShoreChallenge
 
 ## TODO:
-- ~scaffold prject~
+- ~scaffold project~
 - ~implement core logic~
 - write unit tests
 - implement API

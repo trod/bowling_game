@@ -1,7 +1,12 @@
 defmodule ShoreChallenge.Bowling do
+  @moduledoc """
+  Internal Bowling game API.
+  """
+
   alias ShoreChallenge.Game
   alias ShoreChallenge.Game.{Frame, Spare, Strike}
-  alias __MODULE__
+
+  alias ShoreChallenge.GamePool
 
   use GenServer
   # Client
@@ -13,15 +18,22 @@ defmodule ShoreChallenge.Bowling do
     GenServer.call(pid, :score)
   end
 
-
   def add_roll(pid, score) do
     GenServer.call(pid, {:roll, score})
+  end
+
+  def info(pid) do
+    GenServer.call(pid, :info)
   end
 
   # callbacks
   @impl true
   def init(:ok) do
-    {:ok, %Game{}}
+    game_uuid = Ecto.UUID.generate()
+    true = GamePool.put(self(), game_uuid)
+    true = GamePool.put(game_uuid, self())
+
+    {:ok, %Game{id: game_uuid}}
   end
 
   @impl true
@@ -30,37 +42,58 @@ defmodule ShoreChallenge.Bowling do
   end
 
   @impl true
-  def handle_call({:roll, score}, _from, game) do
-    game = roll(game, score)
+  def handle_call(:info, _from, game) do
     {:reply, game, game}
   end
 
-  @doc """
-    Records the number of pins knocked down on a single roll. Returns `any`
-    unless there is something wrong with the given number of pins, in which
-    case it returns a helpful message.
-  """
-  @spec roll(any, integer) :: any | String.t()
-  def roll(_game, roll) when roll < 0 do
-    {:error, "Negative roll is invalid"}
-  end
+  @impl true
+  def handle_call({:roll, score}, _from, game) do
+    game
+    |> roll(score)
+    |> case do
+      {:error, msg} ->
+        {:reply, {:error, msg}, game}
 
-  def roll(game, roll) when roll > 10 do
-    {:error, "Pin count exceeds pins on the lane"}
-  end
-
-  # Non-fill ball
-  def roll(%Game{frames: frames} = game, roll) do
-    case game_finished?(game) do
-      true -> {:error, "Game is over"}
-      _ -> do_roll(%Game{game | frames: frames}, roll)
+      game ->
+        {:reply, game, game}
     end
   end
 
-  @doc """
-    Returns score of the current frame + score of completed frames
-  """
-  def do_score(%Game{frames: frames} = game) do
+  @spec roll(any, integer) :: any | String.t()
+  defp roll(_game, roll) when roll < 0 do
+    {:error, "Negative roll is invalid"}
+  end
+
+  defp roll(_game, roll) when roll > 10 do
+    {:error, "Pin count exceeds pins on the lane"}
+  end
+
+  defp roll(%Game{finished: true}, _roll) do
+    {:error, "This game is finished"}
+  end
+
+  defp roll(%Game{strike: nil, spare: nil, throw: 2, score: score}, roll)
+       when roll + score > 10 do
+    {:error, "Sum of first and second roll exceeds 10"}
+  end
+
+  # Non-fill ball
+  defp roll(%Game{} = game, roll) do
+    game
+    |> maybe_set_finished()
+    |> case do
+      %Game{finished: true} -> {:error, "Game is over"}
+      _ -> do_roll(game, roll)
+    end
+  end
+
+  defp do_score(%Game{frames: frames, finished: true}) do
+    frames
+    |> Enum.map(&Map.get(&1, :score))
+    |> Enum.sum()
+  end
+
+  defp do_score(%Game{frames: frames, finished: false} = game) do
     completed_frame_score =
       frames
       |> Enum.map(&Map.get(&1, :score))
@@ -68,10 +101,10 @@ defmodule ShoreChallenge.Bowling do
 
     current_frame_score =
       case game do
-        %Game{strike: %Strike{first_score: first_score, second_score: second_score}} ->
+        %Game{spare: nil, strike: %Strike{first_score: first_score, second_score: second_score}} ->
           10 + first_score + second_score
 
-        %Game{spare: %Spare{first_score: first_score}} ->
+        %Game{strike: nil, spare: %Spare{first_score: first_score}} ->
           10 + first_score
 
         _ ->
@@ -82,59 +115,71 @@ defmodule ShoreChallenge.Bowling do
   end
 
   # Strike
-  defp do_roll(%Game{frames: frames, throw: 1}, 10) do
-    %Game{frames: frames, throw: 2, score: 10, strike: %Strike{first_score: 0, second_score: 0}}
+  defp do_roll(%Game{throw: 1} = game, 10) do
+    %{game | score: 10, throw: 2, strike: %Strike{first_score: 0, second_score: 0}}
   end
 
   # Strike bonus 1
   defp do_roll(
-         %Game{frames: frames, throw: 2, strike: %Strike{first_score: 0, second_score: 0}},
+         %Game{
+           strike: %Strike{first_score: 0, second_score: 0},
+           throw: 2
+         } = game,
          roll
        ) do
-    %Game{
-      frames: frames,
-      throw: 2,
-      score: 10 + roll,
-      strike: %Strike{first_score: roll, second_score: 0}
-    }
+    %{game | score: 10 + roll, throw: 3, strike: %Strike{first_score: roll, second_score: 0}}
   end
 
   # Strike bonus 2
   defp do_roll(
-         %Game{frames: frames, throw: 2, strike: %Strike{first_score: score, second_score: 0}},
+         %Game{
+           frames: frames,
+           throw: 3,
+           strike: %Strike{first_score: score, second_score: 0}
+         } = game,
          roll
        ) do
     final_score = 10 + score + roll
-    %Game{frames: [%Frame{score: final_score} | frames], throw: 1, strike: nil}
+
+    %{game | score: 0, frames: [%Frame{score: final_score} | frames], throw: 1, strike: nil}
   end
 
   # Spare
-  defp do_roll(%Game{score: score, frames: frames, throw: 2}, roll) when score + roll == 10 do
-    %Game{frames: frames, throw: 2, spare: %Spare{first_score: 0}}
+  defp do_roll(%Game{score: score, throw: 2} = game, roll)
+       when score + roll == 10 do
+    %{game | throw: 3, strike: nil, spare: %Spare{first_score: 0}}
   end
 
   # Spare bonus 1
-  defp do_roll(%Game{frames: frames, throw: 2, score: score, spare: %Spare{first_score: 0}}, roll) do
+  defp do_roll(
+         %Game{
+           frames: frames,
+           throw: 3,
+           spare: %Spare{first_score: 0}
+         } = game,
+         roll
+       ) do
     final_score = 10 + roll
-    %Game{frames: [%Frame{score: final_score} | frames], throw: 1, spare: nil}
+
+    %{game | frames: [%Frame{score: final_score} | frames], throw: 1, spare: nil}
   end
 
-  # Normal first throw
-  defp do_roll(%Game{frames: frames, throw: 1}, roll) do
-    %Game{frames: frames, score: roll, throw: 2}
+  # first throw
+  defp do_roll(%Game{throw: 1} = game, roll) do
+    %{game | score: roll, throw: 2}
   end
 
-  # Normal second throw
-  defp do_roll(%Game{frames: frames, throw: 2, score: score}, roll) do
-    %Game{frames: [%Frame{score: score + roll} | frames]}
+  #  second throw
+  defp do_roll(%Game{frames: frames, throw: 2, score: score} = game, roll) do
+    %{game | frames: [%Frame{score: score + roll} | frames], throw: 1}
   end
 
-  defp game_finished?(%Game{frames: frames}) do
+  defp maybe_set_finished(%Game{frames: frames} = game) do
     frame_count = Enum.count(frames)
 
     cond do
-      frame_count >= 10 -> true
-      frame_count < 10 -> false
+      frame_count >= 10 -> %{game | finished: true, score: 0}
+      frame_count < 10 -> game
     end
   end
 end

@@ -1,11 +1,9 @@
 defmodule ShoreChallengeWeb.Router do
   use ShoreChallengeWeb, :router
 
-  pipeline :api do
-    plug :accepts, ["json"]
-  end
-
   scope "/api", ShoreChallengeWeb do
-    pipe_through :api
+    post("/new", BowlingController, :new)
+    get("/score", BowlingController, :score)
+    post("/roll", BowlingController, :roll)
   end
 end

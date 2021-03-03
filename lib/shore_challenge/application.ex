@@ -1,10 +1,12 @@
 defmodule ShoreChallenge.Application do
+  @moduledoc false
+
   use Application
 
   def start(_type, _args) do
     children = [
-      ShoreChallenge.Db,
-      ShoreChallengeWeb.Endpoint
+      ShoreChallengeWeb.Endpoint,
+      ShoreChallenge.GamePool
     ]
 
     opts = [strategy: :one_for_one, name: ShoreChallenge.Supervisor]

@@ -21,7 +21,7 @@ Below you can find my notes notes which I made during the development. Also I wa
 - ~implement API~
 - ~better error handling for API~
 - ~write api tests~
-- documentation (maybe use swagger?)
+- ~documentation~ (maybe use swagger?)
 - ~clean-up~
 
 ## Installation

@@ -1,16 +1,16 @@
 # ShoreChallenge
 
 ## Comments:
-In this challenge I decided to try something new and implemented a simple in-memory ets storage for bowling games. Every game runs in its own proccess and completely isolated from others. Biggest and natural disadvantage of that approach is that all the games are lost in case of server restart/crash.
-Below you can find my notes notes which I made during the development. Also I want to list some parts I would like to add if I'd have more time:
+In this challenge I decided to try something new and implemented a simple in-memory ets storage for bowling games. Every game runs in its own process and completely isolated from others. Biggest and natural disadvantage of that approach is that all the games are lost in case of server restart/crash.
+Below you can find my notes which I made during the development. Also I want to list some parts I would like to add or improve if I'd have more time:
 
-- Implement proper error templating
+- Proper error templating.
 - Switch to json request/response as it's more flexible than plain params.
 - Add proper API documentation: https://swagger.io/tools/swagger-ui/ is just great.
 - Add telemetry: https://www.jaegertracing.io/
-- I'd like to refactor controller.
+- I'd like to completely refactor controller (see todos in there).
 - Better logging.
-- Implement persistent storage.
+- Implement persistent storage and use ets as a cache
 - Run more tests.
 
 ## Notes during developement:

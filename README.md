@@ -27,7 +27,7 @@ Below you can find my notes notes which I made during the development. Also I wa
 ## Installation
   * Install dependencies with `mix deps.get`
   * Create and migrate your database with `mix ecto.setup`
-  * Start Phoenix endpoint with `mix phx.server
+  * Start Phoenix endpoint with `mix phx.server`
   
 ## Tests
  Run tests with `mix test`

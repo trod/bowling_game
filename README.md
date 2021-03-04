@@ -1,5 +1,15 @@
 # ShoreChallenge
 
+## Disclaimer:
+I have never played in ten-pin bowling, so there can be a slightly difference in the actual and implemented game rules.
+
+The way it is implented:
+```
+Normal Frame: Score = Roll 1  + Roll 2
+Spare Frame: Score = Roll 1 + Roll 2 + Spare bonus
+Strike Frame: Score = Roll 1 + Strike bonus 1 + Strike bonus 2
+```
+
 ## Comments:
 In this challenge I decided to try something new and implemented a simple in-memory ets storage for bowling games. Every game runs in its own process and completely isolated from others. Biggest and natural disadvantage of that approach is that all the games are lost in case of server restart/crash.
 Below you can find my notes which I made during the development. Also I want to list some parts I would like to add or improve if I'd have more time:

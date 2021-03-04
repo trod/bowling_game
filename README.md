@@ -3,7 +3,7 @@
 ## Disclaimer:
 I have never played in ten-pin bowling, so there can be a slight difference in the actual and implemented game rules.
 
-The way it is implented:
+The way it is implemented:
 ```
 Normal Frame: Score = Roll 1  + Roll 2
 Spare Frame: Score = Roll 1 + Roll 2 + Spare bonus

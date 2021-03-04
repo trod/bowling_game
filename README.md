@@ -12,12 +12,14 @@ Below you can find my notes which I made during the development. Also I want to 
 - Better logging.
 - Implement persistent storage and use ets as a cache
 - Run more tests.
+- Specs! (completely forgot to add them)
 
 ## Notes during developement:
 - ~scaffold project~
 - ~implement core logic~
 - ~db and ecto stuff~ Note: removed in favor of in-memory ets storage
 - ~write unit tests~
+- add specs
 - ~implement API~
 - ~better error handling for API~
 - ~write api tests~

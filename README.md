@@ -1,11 +1,12 @@
 # ShoreChallenge
 
-## TODO:
+## Notes during developement:
 - ~scaffold project~
 - ~implement core logic~
-- db and ecto stuff
+- ~db and ecto stuff~ Note: removed in favor of in-memory ets storage
 - write unit tests
-- implement API
+- ~implement API~
+- better error handling for API
 - write api tests
 - documentation (maybe use swagger?)
 - clean-up
